@@ -1,0 +1,45 @@
+name: Опубликовать Эго
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Публикация сайта
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Подготовить GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Собрать статический сайт
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/ego-pages"
+          cp index.html "$RUNNER_TEMP/ego-pages/"
+          cp -R src "$RUNNER_TEMP/ego-pages/src"
+
+      - name: Загрузить файлы сайта
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/ego-pages
+
+      - name: Опубликовать
+        id: deployment
+        uses: actions/deploy-pages@v4
